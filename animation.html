@@ -1,0 +1,1275 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Gift Animation</title>
+  <style>
+    :root {
+      --gold: #c99a1c;
+      --pink: #f81b7c;
+      --yellow: #f3d129;
+      --deep-1: #0a0320;
+      --deep-2: #14013c;
+      --deep-3: #240050;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: radial-gradient(circle at 50% 30%, #25005f 0%, #110234 40%, #060019 100%);
+    }
+
+    .scene {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 50% 36%, rgba(96, 0, 181, 0.22), transparent 58%),
+        linear-gradient(160deg, var(--deep-1), var(--deep-2) 40%, var(--deep-3) 100%);
+    }
+
+    .start-gate {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, rgba(4, 1, 19, 0.88), rgba(8, 2, 34, 0.9));
+      backdrop-filter: blur(6px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .start-gate.hide {
+      opacity: 0;
+      transform: scale(1.03);
+      pointer-events: none;
+    }
+
+    .start-card {
+      width: min(84vw, 540px);
+      background: rgba(22, 7, 52, 0.68);
+      border: 1px solid rgba(255, 224, 132, 0.35);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45), 0 0 26px rgba(255, 190, 84, 0.16);
+      text-align: center;
+    }
+
+    .start-photo-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 14px;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 40%, rgba(255, 177, 79, 0.33), rgba(60, 10, 110, 0.84));
+      border: 1px solid rgba(255, 219, 117, 0.3);
+    }
+
+    .start-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .start-photo.missing {
+      display: none;
+    }
+
+    .start-photo-fallback {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255, 238, 210, 0.92);
+      font-size: clamp(0.9rem, 2.5vw, 1.15rem);
+      padding: 0 16px;
+      line-height: 1.4;
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
+    }
+
+    .start-photo-fallback.show {
+      display: flex;
+    }
+
+    .start-copy {
+      margin: 14px 0 12px;
+      color: #ffe9c4;
+      font-family: "Times New Roman", serif;
+      letter-spacing: 0.08em;
+      font-size: clamp(1rem, 2.2vw, 1.35rem);
+      text-shadow: 0 0 8px rgba(255, 191, 111, 0.42);
+    }
+
+    .start-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .yes-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 30px;
+      font-size: clamp(1rem, 2.3vw, 1.2rem);
+      font-weight: 700;
+      cursor: pointer;
+      color: #4a0528;
+      background: linear-gradient(180deg, #ffe47c 0%, #ffb72b 100%);
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.34), 0 0 18px rgba(255, 191, 71, 0.45);
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+
+    .yes-btn:hover {
+      transform: translateY(-1px) scale(1.02);
+      filter: brightness(1.04);
+    }
+
+    .pick-btn {
+      border: 1px solid rgba(255, 226, 130, 0.5);
+      border-radius: 999px;
+      padding: 10px 24px;
+      font-size: clamp(0.95rem, 2vw, 1.05rem);
+      font-weight: 600;
+      cursor: pointer;
+      color: #ffe9c4;
+      background: rgba(255, 200, 90, 0.14);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+      transition: transform 0.15s ease, filter 0.15s ease, background 0.15s ease;
+    }
+
+    .pick-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+      background: rgba(255, 200, 90, 0.24);
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    #bgCanvas {
+      z-index: 1;
+    }
+
+    #fxCanvas {
+      z-index: 8;
+      mix-blend-mode: screen;
+    }
+
+    .waves {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .wave {
+      position: absolute;
+      width: 150%;
+      left: -25%;
+      border-radius: 50%;
+      filter: blur(2px);
+      opacity: 0.32;
+      animation: waveMove linear infinite;
+    }
+
+    .wave.w1 {
+      bottom: 18%;
+      height: 30%;
+      background: radial-gradient(ellipse at center, rgba(96, 0, 188, 0.5) 0%, rgba(96, 0, 188, 0.14) 55%, transparent 80%);
+      animation-duration: 14s;
+    }
+
+    .wave.w2 {
+      bottom: 2%;
+      height: 34%;
+      background: radial-gradient(ellipse at center, rgba(168, 0, 140, 0.44) 0%, rgba(168, 0, 140, 0.12) 58%, transparent 82%);
+      animation-duration: 18s;
+      animation-direction: reverse;
+    }
+
+    .wave.w3 {
+      bottom: -11%;
+      height: 40%;
+      background: radial-gradient(ellipse at center, rgba(86, 0, 150, 0.36) 0%, rgba(86, 0, 150, 0.1) 60%, transparent 84%);
+      animation-duration: 22s;
+    }
+
+    @keyframes waveMove {
+      0% { transform: translateX(-3%); }
+      50% { transform: translateX(3%); }
+      100% { transform: translateX(-2%); }
+    }
+
+    .rings {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+      display: grid;
+      place-items: center;
+    }
+
+    .ring {
+      position: absolute;
+      border: 2px solid rgba(201, 154, 28, 0.55);
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(201, 154, 28, 0.18);
+      animation: ringRotate linear infinite;
+    }
+
+    .ring.r1 {
+      width: min(110vw, 950px);
+      aspect-ratio: 1;
+      animation-duration: 40s;
+    }
+
+    .ring.r2 {
+      width: min(85vw, 700px);
+      aspect-ratio: 1;
+      animation-duration: 28s;
+      animation-direction: reverse;
+    }
+
+    .ring.r3 {
+      width: min(45vw, 360px);
+      aspect-ratio: 1;
+      animation-duration: 18s;
+    }
+
+    @keyframes ringRotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .spark-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .spark {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #8df2ff;
+      box-shadow: 0 0 8px currentColor;
+      animation: twinkle var(--dur) ease-in-out infinite;
+      opacity: 0.8;
+    }
+
+    .spark::before,
+    .spark::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: currentColor;
+      opacity: 0.75;
+    }
+
+    .spark::before {
+      width: 2px;
+      height: 18px;
+      border-radius: 2px;
+    }
+
+    .spark::after {
+      width: 18px;
+      height: 2px;
+      border-radius: 2px;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { transform: scale(0.8); opacity: 0.35; }
+      45% { transform: scale(1.2); opacity: 1; }
+    }
+
+    .gift-stage {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+    }
+
+    .gift {
+      position: relative;
+      width: min(22vw, 180px);
+      aspect-ratio: 1;
+      transform: translateY(6vh);
+      filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.45));
+    }
+    .box {
+      position: absolute;
+      inset: 38% 0 0;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #f41a7d 0%, #cc0c63 100%);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      overflow: hidden;
+    }
+
+    .box::before,
+    .box::after,
+    .lid::before,
+    .lid::after {
+      content: "";
+      position: absolute;
+      background: linear-gradient(180deg, #ffe77f 0%, #e9b719 100%);
+    }
+
+    .box::before,
+    .lid::before {
+      width: 16%;
+      height: 100%;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+    }
+
+    .box::after {
+      width: 100%;
+      height: 14%;
+      left: 0;
+      top: 42%;
+    }
+
+    .lid {
+      position: absolute;
+      left: 50%;
+      top: 30%;
+      width: 110%;
+      height: 24%;
+      transform-origin: 50% 100%;
+      transform: translate(-50%, -30%) rotate(0deg);
+      border-radius: 6px;
+      background: linear-gradient(180deg, #ff2f88 0%, #e00e6f 100%);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      transition: transform 0.35s linear;
+    }
+
+    .lid::after {
+      width: 100%;
+      height: 30%;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .core-ring {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: min(28vw, 230px);
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border: 2px solid rgba(201, 154, 28, 0.56);
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(201, 154, 28, 0.22);
+      animation: ringRotate 10s linear infinite;
+      pointer-events: none;
+    }
+
+    .gift-glow {
+      position: absolute;
+      left: 50%;
+      bottom: -14%;
+      width: 82%;
+      height: 24%;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 210, 105, 0.66), rgba(255, 210, 105, 0.06) 58%, transparent 80%);
+      filter: blur(3px);
+      opacity: 0.85;
+    }
+
+    .vignette {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.45) 100%);
+    }
+
+    .celebration-panel {
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      transform: scale(0.96);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+      text-align: center;
+    }
+
+    .celebration-panel.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .love-note {
+      margin-top: 8vh;
+      margin-bottom: 0.8vh;
+      font-family: "Times New Roman", serif;
+      font-size: clamp(1rem, 2vw, 1.9rem);
+      letter-spacing: 0.16em;
+      color: rgba(255, 224, 230, 0.9);
+      text-shadow: 0 0 10px rgba(255, 150, 180, 0.45);
+    }
+
+    .title-line {
+      margin: 0;
+      font-family: "Times New Roman", serif;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      line-height: 1.02;
+      color: #ffe8df;
+      text-shadow: 0 0 10px rgba(255, 183, 180, 0.6), 0 0 24px rgba(255, 113, 165, 0.46);
+      animation: textPulse 3.2s ease-in-out infinite;
+    }
+
+    .title-line.top {
+      font-size: clamp(1.9rem, 5.2vw, 5.6rem);
+      margin-bottom: 0.1em;
+    }
+
+    .title-line.name {
+      font-size: clamp(3.5rem, 11vw, 11rem);
+      letter-spacing: 0.22em;
+      background: linear-gradient(90deg, #fff4c8 0%, #ffe063 34%, #ffbe8b 68%, #fff0c5 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: none;
+      filter: drop-shadow(0 0 12px rgba(255, 177, 64, 0.75));
+      animation-duration: 2.8s;
+    }
+
+    @keyframes textPulse {
+      0%, 100% {
+        filter: brightness(0.94);
+      }
+      50% {
+        filter: brightness(1.1);
+      }
+    }
+
+    .gold-line {
+      width: min(78vw, 700px);
+      height: 2px;
+      margin-top: 2.8vh;
+      background: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(241, 192, 61, 0.96), rgba(0, 0, 0, 0));
+      box-shadow: 0 0 10px rgba(241, 192, 61, 0.45);
+    }
+
+    .wish-block {
+      margin-top: 11vh;
+      font-family: "Times New Roman", serif;
+      font-size: clamp(1.1rem, 2.7vw, 2.4rem);
+      line-height: 1.36;
+      color: rgba(255, 214, 232, 0.9);
+      text-shadow: 0 0 10px rgba(255, 145, 184, 0.4);
+    }
+
+    .wish-block p {
+      margin: 0.1em 0;
+    }
+
+    .mini-cake {
+      position: absolute;
+      left: 50%;
+      bottom: 8vh;
+      width: min(30vw, 240px);
+      height: min(26vw, 180px);
+      transform: translateX(-50%);
+      filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.34));
+      animation: cakeRise 2.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes cakeRise {
+      from {
+        transform: translateX(-50%) translateY(0);
+      }
+      to {
+        transform: translateX(-50%) translateY(-4px);
+      }
+    }
+
+    .mini-base {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 86%;
+      height: 15%;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: linear-gradient(180deg, #ffe4ee 0%, #ca85a0 100%);
+    }
+
+    .mini-tier {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 8px;
+      background: linear-gradient(180deg, #ff5a9b 0%, #d11f69 100%);
+      border: 1px solid rgba(255, 255, 255, 0.26);
+      overflow: hidden;
+    }
+
+    .mini-tier.t1 {
+      bottom: 11%;
+      width: 74%;
+      height: 35%;
+    }
+
+    .mini-tier.t2 {
+      bottom: 39%;
+      width: 52%;
+      height: 27%;
+      background: linear-gradient(180deg, #ff7ab1 0%, #db2f72 100%);
+    }
+
+    .mini-tier::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 65%);
+    }
+
+    .mini-candles {
+      position: absolute;
+      left: 50%;
+      bottom: 63%;
+      width: 34%;
+      height: 22%;
+      transform: translateX(-50%);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .mini-candle {
+      position: relative;
+      width: 18%;
+      height: 62%;
+      border-radius: 4px;
+      background: repeating-linear-gradient(45deg, #fff 0 4px, #ffd562 4px 8px);
+    }
+
+    .mini-candle::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: -34%;
+      transform: translateX(-50%);
+      width: 52%;
+      height: 34%;
+      border-radius: 55% 55% 45% 45%;
+      background: linear-gradient(180deg, #ffe67b 0%, #ff8f3a 90%);
+      box-shadow: 0 0 7px rgba(255, 188, 64, 0.8);
+      animation: tinyFlame 0.16s ease-in-out infinite alternate;
+    }
+
+    @keyframes tinyFlame {
+      from {
+        transform: translateX(-50%) scale(1) rotate(-1deg);
+      }
+      to {
+        transform: translateX(-50%) scale(1.08) rotate(2deg);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .gift {
+        width: min(36vw, 150px);
+      }
+
+      .ring.r1 {
+        width: 140vw;
+      }
+
+      .ring.r2 {
+        width: 105vw;
+      }
+
+      .ring.r3 {
+        width: 60vw;
+      }
+
+      .wish-block {
+        margin-top: 8vh;
+        font-size: clamp(1rem, 4.1vw, 1.6rem);
+      }
+
+      .love-note {
+        margin-top: 9vh;
+        font-size: clamp(0.9rem, 3.8vw, 1.3rem);
+      }
+
+      .title-line.top {
+        font-size: clamp(1.8rem, 8.4vw, 3rem);
+      }
+
+      .title-line.name {
+        font-size: clamp(3rem, 14vw, 5rem);
+        letter-spacing: 0.14em;
+      }
+
+      .mini-cake {
+        width: min(48vw, 210px);
+        height: min(38vw, 150px);
+        bottom: 6vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <div id="startGate" class="start-gate">
+      <div class="start-card">
+        <div class="start-photo-wrap">
+          <img id="startPhoto" class="start-photo" src="saziya-photo.png" alt="Saziya image">
+          <div id="startPhotoFallback" class="start-photo-fallback">
+            Add your image file in this folder or click Choose Image.
+          </div>
+        </div>
+        <p class="start-copy">Ready for your surprise animation?</p>
+        <div class="start-actions">
+          <button id="yesButton" class="yes-btn" type="button">Yes</button>
+          <button id="pickImageBtn" class="pick-btn" type="button">Choose Image</button>
+          <input id="imageInput" type="file" accept="image/*" hidden>
+        </div>
+      </div>
+    </div>
+
+    <canvas id="bgCanvas"></canvas>
+
+    <div class="waves" aria-hidden="true">
+      <span class="wave w1"></span>
+      <span class="wave w2"></span>
+      <span class="wave w3"></span>
+    </div>
+
+    <div class="spark-layer" id="sparkLayer" aria-hidden="true"></div>
+
+    <div class="rings" aria-hidden="true">
+      <span class="ring r1"></span>
+      <span class="ring r2"></span>
+      <span class="ring r3"></span>
+    </div>
+
+    <div class="gift-stage">
+      <div class="core-ring"></div>
+    </div>
+
+    <section id="celebrationPanel" class="celebration-panel" aria-hidden="true">
+      <p class="love-note">- with all my love -</p>
+      <h2 class="title-line top">HAPPY BIRTHDAY</h2>
+      <h1 class="title-line name">SAZIYA</h1>
+      <div class="gold-line"></div>
+      <div class="wish-block">
+        <p>May every dream you hold dear</p>
+        <p>blossom into beautiful reality.</p>
+        <p>You are loved beyond words.</p>
+      </div>
+      <div class="mini-cake" aria-hidden="true">
+        <div class="mini-base"></div>
+        <div class="mini-tier t1"></div>
+        <div class="mini-tier t2"></div>
+        <div class="mini-candles">
+          <span class="mini-candle"></span>
+          <span class="mini-candle"></span>
+          <span class="mini-candle"></span>
+        </div>
+      </div>
+    </section>
+
+    <canvas id="fxCanvas"></canvas>
+    <div class="vignette"></div>
+  </div>
+
+  <script>
+    (() => {
+      const bgCanvas = document.getElementById("bgCanvas");
+      const fxCanvas = document.getElementById("fxCanvas");
+      const bgCtx = bgCanvas.getContext("2d");
+      const fxCtx = fxCanvas.getContext("2d");
+
+      const gift = document.getElementById("gift");
+      const giftLid = document.getElementById("giftLid");
+      const sparkLayer = document.getElementById("sparkLayer");
+      const celebrationPanel = document.getElementById("celebrationPanel");
+      const startGate = document.getElementById("startGate");
+      const yesButton = document.getElementById("yesButton");
+      const startPhoto = document.getElementById("startPhoto");
+      const startPhotoFallback = document.getElementById("startPhotoFallback");
+      const pickImageBtn = document.getElementById("pickImageBtn");
+      const imageInput = document.getElementById("imageInput");
+
+      let width = 0;
+      let height = 0;
+      let dpr = 1;
+
+      const stars = [];
+      const particles = [];
+      const rainPetals = [];
+      const glitterBars = [];
+      const heartBits = [];
+
+      let animationStarted = false;
+      let startTime = 0;
+      let lastFrame = 0;
+      let previousPhase = 0;
+      const cycle = 6200;
+      let celebrationVisible = false;
+      let rainClock = 0;
+      let heartClock = 0;
+      let currentObjectUrl = "";
+
+      const rand = (min, max) => Math.random() * (max - min) + min;
+
+      const localPhotoCandidates = [
+        "saziya-photo.jpg",
+        "saziya-photo.jpeg",
+        "saziya-photo.png",
+        "saziya-photo.webp",
+        "saziya.jpg",
+        "saziya.jpeg",
+        "saziya.png",
+        "photo.jpg",
+        "photo.jpeg",
+        "photo.png",
+        "image.jpg",
+        "image.jpeg",
+        "image.png"
+      ];
+
+      function createSparkSprites() {
+        sparkLayer.innerHTML = "";
+        const count = width < 700 ? 24 : 40;
+        const colors = ["#6ff4ff", "#ffa85f", "#f47fff", "#ffe14a", "#8eb7ff", "#92ffc8"];
+
+        for (let i = 0; i < count; i += 1) {
+          const s = document.createElement("span");
+          s.className = "spark";
+          s.style.left = `${rand(2, 98)}%`;
+          s.style.top = `${rand(4, 94)}%`;
+          s.style.color = colors[Math.floor(Math.random() * colors.length)];
+          s.style.setProperty("--dur", `${rand(1.8, 4.2).toFixed(2)}s`);
+          s.style.animationDelay = `${rand(0, 3.4).toFixed(2)}s`;
+          s.style.transform = `scale(${rand(0.7, 1.6).toFixed(2)})`;
+          sparkLayer.appendChild(s);
+        }
+      }
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        [bgCanvas, fxCanvas].forEach((canvas) => {
+          canvas.width = Math.floor(width * dpr);
+          canvas.height = Math.floor(height * dpr);
+          canvas.style.width = `${width}px`;
+          canvas.style.height = `${height}px`;
+        });
+
+        bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        initStars();
+        createSparkSprites();
+      }
+
+      function initStars() {
+        stars.length = 0;
+        const count = width < 700 ? 120 : 200;
+        for (let i = 0; i < count; i += 1) {
+          stars.push({
+            x: rand(0, width),
+            y: rand(0, height),
+            size: rand(0.7, 2.8),
+            speed: rand(0.03, 0.14),
+            drift: rand(-0.06, 0.06),
+            hue: rand(180, 320),
+            phase: rand(0, Math.PI * 2)
+          });
+        }
+      }
+
+      function hideFallback() {
+        if (startPhoto) {
+          startPhoto.classList.remove("missing");
+        }
+        if (startPhotoFallback) {
+          startPhotoFallback.classList.remove("show");
+        }
+      }
+
+      function showFallback(message) {
+        if (startPhoto) {
+          startPhoto.classList.add("missing");
+        }
+        if (startPhotoFallback) {
+          startPhotoFallback.classList.add("show");
+          if (typeof message === "string" && message.length > 0) {
+            startPhotoFallback.textContent = message;
+          }
+        }
+      }
+
+      function applyPhotoSource(src) {
+        if (!startPhoto) {
+          return;
+        }
+        startPhoto.src = src;
+        hideFallback();
+      }
+
+      function tryLocalPhotoCandidates() {
+        let i = 0;
+        const tryNext = () => {
+          if (i >= localPhotoCandidates.length) {
+            showFallback("Image not found. Click Choose Image.");
+            return;
+          }
+          const src = localPhotoCandidates[i];
+          i += 1;
+          const probe = new Image();
+          probe.onload = () => {
+            applyPhotoSource(src);
+          };
+          probe.onerror = () => {
+            tryNext();
+          };
+          probe.src = src;
+        };
+        tryNext();
+      }
+
+      function startExperience() {
+        if (animationStarted) {
+          return;
+        }
+
+        animationStarted = true;
+        startTime = performance.now();
+        lastFrame = startTime;
+        previousPhase = 0;
+        rainClock = 0;
+        heartClock = 0;
+        setCelebrationVisible(false);
+
+        startGate.classList.add("hide");
+        spawnBurst(320);
+        requestAnimationFrame(animate);
+      }
+
+      function giftOrigin() {
+        return { x: width * 0.5, y: height * 0.545 };
+      }
+
+      function spawnBurst(count = 180) {
+        const o = giftOrigin();
+        const colors = [
+          [101, 246, 255],
+          [250, 124, 255],
+          [255, 211, 69],
+          [121, 198, 255],
+          [255, 132, 83],
+          [154, 255, 203]
+        ];
+
+        for (let i = 0; i < count; i += 1) {
+          const angle = rand(0, Math.PI * 2);
+          const speed = rand(0.7, 7.4);
+          const color = colors[Math.floor(Math.random() * colors.length)];
+          particles.push({
+            x: o.x + rand(-8, 8),
+            y: o.y + rand(-8, 8),
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - rand(0.1, 2.2),
+            size: rand(1.8, 5.4),
+            life: 0,
+            maxLife: rand(58, 130),
+            alpha: 1,
+            color,
+            twinkle: rand(0, Math.PI * 2)
+          });
+        }
+      }
+
+      function spawnCelebrationRain(count = 7) {
+        const petalColors = [
+          [255, 120, 175],
+          [255, 84, 140],
+          [255, 165, 206],
+          [255, 96, 168]
+        ];
+        const barColors = [
+          [255, 214, 77],
+          [255, 120, 245],
+          [255, 77, 137]
+        ];
+
+        for (let i = 0; i < count; i += 1) {
+          const shouldBeBar = Math.random() > 0.74;
+          if (shouldBeBar) {
+            const c = barColors[Math.floor(Math.random() * barColors.length)];
+            glitterBars.push({
+              x: rand(-20, width + 20),
+              y: rand(-140, -20),
+              vx: rand(-0.8, 0.8),
+              vy: rand(1.7, 3.1),
+              w: rand(5, 9),
+              h: rand(14, 24),
+              rot: rand(0, Math.PI * 2),
+              vr: rand(-0.08, 0.08),
+              life: 0,
+              maxLife: rand(180, 320),
+              alpha: rand(0.62, 0.95),
+              color: c
+            });
+          } else {
+            const c = petalColors[Math.floor(Math.random() * petalColors.length)];
+            rainPetals.push({
+              x: rand(-40, width + 40),
+              y: rand(-120, -24),
+              vx: rand(-0.6, 0.6),
+              vy: rand(1.1, 2.4),
+              w: rand(8, 15),
+              h: rand(13, 24),
+              rot: rand(0, Math.PI * 2),
+              vr: rand(-0.06, 0.06),
+              life: 0,
+              maxLife: rand(220, 420),
+              alpha: rand(0.56, 0.95),
+              color: c,
+              wave: rand(0, Math.PI * 2)
+            });
+          }
+        }
+      }
+
+      function spawnHearts(count = 5) {
+        for (let i = 0; i < count; i += 1) {
+          heartBits.push({
+            x: rand(width * 0.08, width * 0.92),
+            y: rand(height * 0.14, height * 0.82),
+            vx: rand(-0.32, 0.32),
+            vy: rand(-0.4, -0.08),
+            size: rand(6, 14),
+            life: 0,
+            maxLife: rand(120, 220),
+            alpha: rand(0.6, 0.9),
+            hue: rand(330, 355)
+          });
+        }
+      }
+
+      function drawHeart(ctx, x, y, size) {
+        const s = size;
+        ctx.beginPath();
+        ctx.moveTo(x, y + s * 0.28);
+        ctx.bezierCurveTo(x, y - s * 0.28, x - s * 0.48, y - s * 0.3, x - s * 0.48, y + s * 0.08);
+        ctx.bezierCurveTo(x - s * 0.48, y + s * 0.38, x - s * 0.2, y + s * 0.56, x, y + s * 0.76);
+        ctx.bezierCurveTo(x + s * 0.2, y + s * 0.56, x + s * 0.48, y + s * 0.38, x + s * 0.48, y + s * 0.08);
+        ctx.bezierCurveTo(x + s * 0.48, y - s * 0.3, x, y - s * 0.28, x, y + s * 0.28);
+        ctx.closePath();
+      }
+
+      function setCelebrationVisible(active) {
+        if (active && !celebrationVisible) {
+          celebrationVisible = true;
+          celebrationPanel.classList.add("show");
+          celebrationPanel.setAttribute("aria-hidden", "false");
+          spawnHearts(26);
+          spawnCelebrationRain(32);
+        } else if (!active && celebrationVisible) {
+          celebrationVisible = false;
+          celebrationPanel.classList.remove("show");
+          celebrationPanel.setAttribute("aria-hidden", "true");
+        }
+      }
+
+      function updateCelebrationParticles(now, dt) {
+        const t = now * 0.003;
+
+        for (let i = rainPetals.length - 1; i >= 0; i -= 1) {
+          const p = rainPetals[i];
+          p.vx += Math.sin(t + p.wave) * 0.02;
+          p.vx *= 0.995;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vr;
+          p.life += 1;
+          const lifeFade = 1 - p.life / p.maxLife;
+          p.alpha = Math.max(0, Math.min(p.alpha, lifeFade));
+
+          if (p.life >= p.maxLife || p.y > height + 50) {
+            rainPetals.splice(i, 1);
+            continue;
+          }
+
+          fxCtx.save();
+          fxCtx.globalAlpha = p.alpha;
+          fxCtx.translate(p.x, p.y);
+          fxCtx.rotate(p.rot);
+          fxCtx.fillStyle = `rgba(${p.color[0]}, ${p.color[1]}, ${p.color[2]}, 1)`;
+          fxCtx.beginPath();
+          fxCtx.ellipse(0, 0, p.w, p.h * 0.42, 0, 0, Math.PI * 2);
+          fxCtx.fill();
+          fxCtx.restore();
+        }
+
+        for (let i = glitterBars.length - 1; i >= 0; i -= 1) {
+          const b = glitterBars[i];
+          b.vx *= 0.994;
+          b.x += b.vx;
+          b.y += b.vy;
+          b.rot += b.vr;
+          b.life += 1;
+          const lifeFade = 1 - b.life / b.maxLife;
+          b.alpha = Math.max(0, Math.min(b.alpha, lifeFade));
+
+          if (b.life >= b.maxLife || b.y > height + 40) {
+            glitterBars.splice(i, 1);
+            continue;
+          }
+
+          fxCtx.save();
+          fxCtx.globalAlpha = b.alpha;
+          fxCtx.translate(b.x, b.y);
+          fxCtx.rotate(b.rot);
+          fxCtx.fillStyle = `rgba(${b.color[0]}, ${b.color[1]}, ${b.color[2]}, 1)`;
+          fxCtx.fillRect(-b.w * 0.5, -b.h * 0.5, b.w, b.h);
+          fxCtx.restore();
+        }
+
+        for (let i = heartBits.length - 1; i >= 0; i -= 1) {
+          const h = heartBits[i];
+          h.x += h.vx;
+          h.y += h.vy;
+          h.vy += 0.003;
+          h.life += 1;
+          const lifeFade = 1 - h.life / h.maxLife;
+          h.alpha = Math.max(0, Math.min(h.alpha, lifeFade));
+
+          if (h.life >= h.maxLife || h.y < -30 || h.y > height + 30) {
+            heartBits.splice(i, 1);
+            continue;
+          }
+
+          fxCtx.save();
+          fxCtx.globalAlpha = h.alpha;
+          fxCtx.fillStyle = `hsla(${h.hue}, 100%, 72%, 1)`;
+          fxCtx.shadowBlur = 10;
+          fxCtx.shadowColor = `hsla(${h.hue}, 100%, 72%, 0.62)`;
+          drawHeart(fxCtx, h.x, h.y, h.size);
+          fxCtx.fill();
+          fxCtx.restore();
+        }
+
+        if (celebrationVisible) {
+          rainClock += dt;
+          heartClock += dt;
+          if (rainClock > 74) {
+            spawnCelebrationRain(4);
+            rainClock = 0;
+          }
+          if (heartClock > 220) {
+            spawnHearts(2);
+            heartClock = 0;
+          }
+        }
+      }
+      function updateStars(now) {
+        const t = now * 0.001;
+        for (const s of stars) {
+          s.y += s.speed;
+          s.x += s.drift;
+
+          if (s.y > height + 6) {
+            s.y = -6;
+            s.x = rand(0, width);
+          }
+          if (s.x < -6) s.x = width + 6;
+          if (s.x > width + 6) s.x = -6;
+
+          const blink = 0.36 + (Math.sin(t + s.phase) + 1) * 0.32;
+          bgCtx.beginPath();
+          bgCtx.fillStyle = `hsla(${s.hue}, 100%, 80%, ${blink})`;
+          bgCtx.shadowBlur = 6;
+          bgCtx.shadowColor = `hsla(${s.hue}, 100%, 76%, ${0.55 * blink})`;
+          bgCtx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+          bgCtx.fill();
+        }
+      }
+
+      function updateParticles(now) {
+        const t = now * 0.004;
+        for (let i = particles.length - 1; i >= 0; i -= 1) {
+          const p = particles[i];
+          p.vx *= 0.988;
+          p.vy = p.vy * 0.988 + 0.02;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life += 1;
+          p.alpha = Math.max(0, 1 - p.life / p.maxLife);
+
+          if (p.life >= p.maxLife) {
+            particles.splice(i, 1);
+            continue;
+          }
+
+          const twinkle = 0.6 + Math.sin(t + p.twinkle) * 0.4;
+          fxCtx.beginPath();
+          fxCtx.fillStyle = `rgba(${p.color[0]}, ${p.color[1]}, ${p.color[2]}, ${p.alpha})`;
+          fxCtx.shadowBlur = 12 * twinkle;
+          fxCtx.shadowColor = `rgba(${p.color[0]}, ${p.color[1]}, ${p.color[2]}, ${0.7 * p.alpha})`;
+          fxCtx.arc(p.x, p.y, p.size * twinkle, 0, Math.PI * 2);
+          fxCtx.fill();
+        }
+      }
+
+      function applyGiftMotion(phase) {
+        let open = 0;
+
+        if (phase < 1100) {
+          open = phase / 1100;
+        } else if (phase < 3600) {
+          open = 1;
+        } else if (phase < 5100) {
+          open = 1 - (phase - 3600) / 1500;
+        } else {
+          open = 0;
+        }
+
+        const raise = 30 + open * 84;
+        const tilt = open * -18;
+        if (giftLid) {
+          giftLid.style.transform = `translate(-50%, -${raise}%) rotate(${tilt}deg)`;
+        }
+
+        const glow = 0.82 + open * 0.48;
+        if (gift) {
+          gift.style.filter = `drop-shadow(0 14px 24px rgba(0,0,0,0.45)) saturate(${glow})`;
+        }
+        return open;
+      }
+
+      function triggerBursts(phase) {
+        if (previousPhase > phase) {
+          spawnBurst(80);
+        }
+
+        if (previousPhase < 1050 && phase >= 1050) {
+          spawnBurst(260);
+        }
+        if (previousPhase < 1650 && phase >= 1650) {
+          spawnBurst(120);
+        }
+        if (previousPhase < 2350 && phase >= 2350) {
+          spawnBurst(100);
+        }
+
+        if (phase > 1200 && phase < 3500 && Math.random() < 0.16) {
+          spawnBurst(12);
+        }
+      }
+
+      function animate(now) {
+        const dt = Math.min(42, now - lastFrame);
+        lastFrame = now;
+
+        const elapsed = now - startTime;
+        const phase = elapsed % cycle;
+
+        const openAmount = applyGiftMotion(phase);
+        triggerBursts(phase);
+        previousPhase = phase;
+
+        const celebrationPhase = openAmount > 0.72 && phase > 1100 && phase < 4300;
+        setCelebrationVisible(celebrationPhase);
+
+        bgCtx.clearRect(0, 0, width, height);
+        fxCtx.clearRect(0, 0, width, height);
+
+        updateStars(now);
+        updateParticles(now);
+        updateCelebrationParticles(now, dt);
+
+        if (Math.random() < 0.05 + (dt / 1300)) {
+          spawnBurst(6);
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      window.addEventListener("resize", resize, { passive: true });
+      resize();
+
+      if (startPhoto) {
+        startPhoto.addEventListener("error", () => {
+          showFallback("Image not found. Click Choose Image.");
+        });
+        tryLocalPhotoCandidates();
+      }
+
+      if (pickImageBtn && imageInput) {
+        pickImageBtn.addEventListener("click", () => {
+          imageInput.click();
+        });
+
+        imageInput.addEventListener("change", (event) => {
+          const input = event.target;
+          const file = input.files && input.files[0];
+          if (!file) {
+            return;
+          }
+
+          if (currentObjectUrl) {
+            URL.revokeObjectURL(currentObjectUrl);
+            currentObjectUrl = "";
+          }
+
+          currentObjectUrl = URL.createObjectURL(file);
+          applyPhotoSource(currentObjectUrl);
+        });
+      }
+
+      if (yesButton) {
+        yesButton.addEventListener("click", startExperience);
+      } else {
+        startExperience();
+      }
+    })();
+  </script>
+</body>
+</html>
+
